@@ -12,7 +12,7 @@ let package = Package(
             targets: ["PublicCalendar"]),
     ],
     dependencies: [
-        .package(name: "AutomatedFetcher", url: "https://github.com/helsingborg-stad/spm-automated-fetcher", from: "0.1.0"),
+        .package(name: "AutomatedFetcher", url: "https://github.com/helsingborg-stad/spm-automated-fetcher", from: "0.1.3"),
         .package(url: "https://github.com/scinfu/SwiftSoup.git", from: "2.3.2"),
     ],
     targets: [
