@@ -4,7 +4,7 @@ Service that fetches swedish public holidays etc from www.kalender.se.
 
 ## Usage
 
-The publisher(for: on:) method can be great for observing changes to the calendar changes.   
+The `publisher(for: on:)` method can be great for observing changes to the calendar.   
 ```swift 
 var cancellables = Set<AnyCancellable>()
 
@@ -15,7 +15,7 @@ publicCalendar.publisher(for: [.holidays], on: Date()).sink { events in
 }.store(in: &cancellables)
 ``` 
 
-If you want to make sure the values you get are corret (and not due to an empty database) you can always use fetch. While you can force an update you probably don't need to. if there's a need to for an update the library will fetch new values.
+If you want to make sure the values you get are current (and not failty due to an empty database) you can always use fetch. While you can force an update you probably don't need to. If there's a need to for an update the library will fetch new values.
 ```swift 
 
 let publicCalendar = PublicCalendar(fetchAutomatically: true)
