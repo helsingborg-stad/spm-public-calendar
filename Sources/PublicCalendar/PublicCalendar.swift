@@ -86,9 +86,9 @@ public class PublicCalendar : ObservableObject {
         public static let `default` = CacheSettings()
     }
     /// Private typealias for the value subject
-    private typealias DBSubscriber = CurrentValueSubject<DB,Never>
+    private typealias DBSubscriber = CurrentValueSubject<DB?,Never>
     /// The calendar value publsiher type
-    public typealias DBPublisher = AnyPublisher<DB,Never>
+    public typealias DBPublisher = AnyPublisher<DB?,Never>
     /// The calendar value type
     public typealias DB = [Category:[Event]]
     /// Public calendar errors
@@ -160,15 +160,15 @@ public class PublicCalendar : ObservableObject {
     /// The latest value subject
     private let latestSubject:DBSubscriber
     /// The instance automated fetcher
-    private let automatedFetcher:AutomatedFetcher<DB>
+    private let automatedFetcher:AutomatedFetcher<DB?>
     /// Indicates whether or not to use preview data
     private let previewData:Bool
     /// The instance cache settings
     private let cacheSettings:CacheSettings
     /// The current fetch subject, used by the fetch-function
-    private var currentFetchSubject = PassthroughSubject<DB,Error>()
+    private var currentFetchSubject = PassthroughSubject<DB?,Error>()
     /// The lastest values publisher
-    /// - Note: It's a CurrentValuePublisher so it will always yield a result. If the database is empty and you subscribe before the fetch has completed, you will get an empty result. You can use the fetch() method in case you want to wait for the most current result.
+    /// - Note: It's a CurrentValuePublisher so it will always yield a result. If no fetch has been performed and you subscribe before a fetch has been completed, you will get a nil result. You can use the fetch() method in case you want to wait for the most current result.
     public let latest:DBPublisher
     
     @Published public var fetchAutomatically = true {
@@ -181,7 +181,7 @@ public class PublicCalendar : ObservableObject {
     ///   - fetchAutomatically: indicates whether or not the automated fetcher should be activated
     ///   - previewData: indicates whether or not the instance should be used for preview purposes.
     public init(years:[Int]? = nil, cacheSettings:CacheSettings = .default, fetchAutomatically:Bool = false, previewData:Bool = false) {
-        let db = DB.read(from: cacheSettings.cacheFilename) ?? [:]
+        let db = DB.read(from: cacheSettings.cacheFilename)
         if let y = years {
             self.years = y
         } else {
@@ -192,7 +192,7 @@ public class PublicCalendar : ObservableObject {
         latestSubject = .init(db)
         latest = latestSubject.eraseToAnyPublisher()
         let date = UserDefaults.standard.object(forKey: cacheSettings.lastFetchKey) as? Date
-        automatedFetcher = AutomatedFetcher<DB>(latestSubject, lastFetch:date, isOn: fetchAutomatically, timeInterval: 60*60*24)
+        automatedFetcher = AutomatedFetcher<DB?>(latestSubject, lastFetch:date, isOn: fetchAutomatically, timeInterval: 60*60*24)
         self.previewData = previewData
         self.fetchAutomatically = true
         self.automatedFetcher.triggered.sink { [weak self] in
@@ -200,7 +200,7 @@ public class PublicCalendar : ObservableObject {
         }.store(in: &cancellables)
         if fetchAutomatically {
             fetch()
-        } else if db.isEmpty == false {
+        } else if db != nil {
             latestSubject.send(db)
         }
     }
@@ -209,27 +209,27 @@ public class PublicCalendar : ObservableObject {
     ///   - categories: category filter
     ///   - date: date filter
     /// - Returns: [Event] publisher
-    /// - Note: If the database is empty and you subscribe before the fetch has completed, you will get an empty result. You can use the fetch() method in case you want to wait for the most current result.
-    public func publisher(for categories:[Category] = Category.allCases, on date:Date = Date()) -> AnyPublisher<[Event],Never> {
+    /// - Note: If the database is uninitiated and you subscribe before the fetch has completed, you will get an nil result. You can use the fetch() method in case you want to wait for the most current result.
+    public func publisher(for categories:[Category] = Category.allCases, on date:Date = Date()) -> AnyPublisher<[Event]?,Never> {
         return latest.map { db in
-            return db.events(on: date, in: categories)
+            return db?.events(on: date, in: categories)
         }.eraseToAnyPublisher()
     }
     /// Fetches data from the kalender.se web site. If there is a fetch in progress the method will not cancel the current fetch.
     /// - Parameter force: force fetch regardless of automation parameters
     /// - Returns: a result publisher triggering once only
-    @discardableResult public func fetch(force:Bool = false) -> AnyPublisher<DB,Error>  {
+    @discardableResult public func fetch(force:Bool = false) -> AnyPublisher<DB?,Error>  {
         if previewData {
             latestSubject.send(Self.previewData)
-            return CurrentValueSubject<DB,Error>(Self.previewData).eraseToAnyPublisher()
+            return CurrentValueSubject<DB?,Error>(Self.previewData).eraseToAnyPublisher()
         }
-        if force == false && automatedFetcher.shouldFetch == false && latestSubject.value.isEmpty == false {
-            return CurrentValueSubject<DB,Error>(self.latestSubject.value).eraseToAnyPublisher()
+        if force == false && automatedFetcher.shouldFetch == false && latestSubject.value == nil {
+            return CurrentValueSubject<DB?,Error>(self.latestSubject.value).eraseToAnyPublisher()
         }
         if automatedFetcher.fetching {
             return currentFetchSubject.eraseToAnyPublisher()
         }
-        self.currentFetchSubject = PassthroughSubject<DB,Error>()
+        self.currentFetchSubject = PassthroughSubject<DB?,Error>()
         var p:AnyCancellable? = nil
         automatedFetcher.started()
         p = getContent().receive(on: DispatchQueue.main).sink { [weak self] completion in

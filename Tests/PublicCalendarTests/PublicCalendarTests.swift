@@ -18,7 +18,7 @@ final class PublicCalendarTests: XCTestCase {
             case .finished:debugPrint("finished")
             }
         } receiveValue: { db in
-            XCTAssert(db.isHoliday(date: date))
+            XCTAssert(db?.isHoliday(date: date) == true)
             expectation.fulfill()
         }.store(in: &cancellables)
         wait(for: [expectation], timeout: 20.0)
@@ -37,7 +37,7 @@ final class PublicCalendarTests: XCTestCase {
             case .finished:debugPrint("finished")
             }
         } receiveValue: { db in
-            XCTAssert(db.isHoliday(date: date) == false)
+            XCTAssert(db?.isHoliday(date: date) == false)
             expectation.fulfill()
         }.store(in: &cancellables)
         wait(for: [expectation], timeout: 20.0)
@@ -57,7 +57,7 @@ final class PublicCalendarTests: XCTestCase {
             case .finished:debugPrint("finished")
             }
         } receiveValue: { db in
-            XCTAssert(db.events(on: date).isEmpty)
+            XCTAssert(db?.events(on: date).isEmpty == true)
             expectation.fulfill()
         }.store(in: &cancellables)
         wait(for: [expectation], timeout: 20.0)
