@@ -23,6 +23,18 @@ public extension Dictionary where Key == PublicCalendar.Category, Value == [Publ
         }
         return events.sorted { $0.date < $1.date }
     }
+    
+    /// Filters out all events in the specified categories
+    /// - Parameters:
+    ///   - categories: the categories to filter on
+    /// - Returns: an array of filtered events
+    func events(in categories:[PublicCalendar.Category] = PublicCalendar.Category.allCases) -> [PublicCalendar.Event] {
+        var events = [PublicCalendar.Event]()
+        for f in categories {
+            events.append(contentsOf: self[f] ?? [])
+        }
+        return events.sorted { $0.date < $1.date }
+    }
     /// Creates cache file url
     /// - Parameter name: the name of the file
     /// - Returns: a url
