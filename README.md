@@ -1,3 +1,7 @@
+## DEPRECATED
+Package will not recieve any updates, please use the PublicCalendar library in https://github.com/helsingborg-stad/spm-daisy instead.
+
+## About
 # PublicCalendar
 
 Service that fetches swedish public holidays etc from www.kalender.se.
